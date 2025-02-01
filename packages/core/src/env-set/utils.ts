@@ -1,9 +1,17 @@
+/* eslint-disable @silverhand/fp/no-mutation */
 import path from 'node:path';
 
 import { adminTenantId } from '@logto/schemas';
 import type { GlobalValues } from '@logto/shared';
 import type { Optional } from '@silverhand/essentials';
 import { deduplicate, trySafe } from '@silverhand/essentials';
+
+const forceHttps = (url: URL): URL => {
+  if (process.env.FORCE_SSL === 'true') {
+    url.protocol = 'https:';
+  }
+  return url;
+};
 
 export const getTenantEndpoint = (
   id: string,
@@ -12,22 +20,21 @@ export const getTenantEndpoint = (
   const adminUrl = trySafe(() => adminUrlSet.endpoint);
 
   if (adminUrl && id === adminTenantId) {
-    return adminUrl;
+    return forceHttps(adminUrl);
   }
 
   if (isPathBasedMultiTenancy) {
-    return new URL(path.join(urlSet.endpoint.pathname, id), urlSet.endpoint);
+    return forceHttps(new URL(path.join(urlSet.endpoint.pathname, id), urlSet.endpoint));
   }
 
   if (!isDomainBasedMultiTenancy) {
-    return urlSet.endpoint;
+    return forceHttps(urlSet.endpoint);
   }
 
   const tenantUrl = new URL(urlSet.endpoint);
-  // eslint-disable-next-line @silverhand/fp/no-mutation
   tenantUrl.hostname = tenantUrl.hostname.replace('*', id);
 
-  return tenantUrl;
+  return forceHttps(tenantUrl);
 };
 
 const getTenantLocalhost = (

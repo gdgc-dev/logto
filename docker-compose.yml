@@ -1,28 +1,35 @@
 # This compose file is for demonstration only, do not use in prod.
 version: "3.9"
 services:
-  app:
+  logto:
+    image: 'svhd/logto:${TAG-latest}'
     depends_on:
       postgres:
         condition: service_healthy
-    image: svhd/logto:${TAG-latest}
     entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
     ports:
       - 3001:3001
       - 3002:3002
     environment:
+      - SERVICE_FQDN_LOGTO
       - TRUST_PROXY_HEADER=1
-      - DB_URL=postgres://postgres:p0stgr3s@postgres:5432/logto
-      # Mandatory for GitPod to map host env to the container, thus GitPod can dynamically configure the public URL of Logto;
-      # Or, you can leverage it for local testing.
-      - ENDPOINT
-      - ADMIN_ENDPOINT
+      - 'DB_URL=postgres://${SERVICE_USER_POSTGRES}:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/${POSTGRES_DB:-logto}'
+      - ENDPOINT=$LOGTO_ENDPOINT
+      - ADMIN_ENDPOINT=$LOGTO_ADMIN_ENDPOINT
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'exit 0'
+      interval: 5s
+      timeout: 20s
+      retries: 10
   postgres:
     image: postgres:17-alpine
     user: postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: p0stgr3s
+      POSTGRES_USER: '${SERVICE_USER_POSTGRES:-postgres}'
+      POSTGRES_PASSWORD: '${SERVICE_PASSWORD_POSTGRES:-p0stgr3s}'
+      POSTGRES_DB: '${POSTGRES_DB:-logto}'
     healthcheck:
       test: ["CMD-SHELL", "pg_isready"]
       interval: 10s
