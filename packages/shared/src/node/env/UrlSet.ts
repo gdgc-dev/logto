@@ -2,7 +2,7 @@ import { deduplicate, getEnv, trySafe, yes } from '@silverhand/essentials';
 
 const forceHttps = (url: URL): URL => {
   if (process.env.FORCE_SSL === 'true') {
-    url.protocol = 'https:';
+    return new URL(url.toString().replace(/^http:/, 'https:'));
   }
   return url;
 };
