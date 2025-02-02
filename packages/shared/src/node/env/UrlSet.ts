@@ -1,5 +1,12 @@
 import { deduplicate, getEnv, trySafe, yes } from '@silverhand/essentials';
 
+const forceHttps = (url: URL): URL => {
+  if (process.env.FORCE_SSL === 'true') {
+    url.protocol = 'https:';
+  }
+  return url;
+};
+
 /**
  * A class to store a set of URLs which may include a localhost URL and/or a custom domain URL.
  *
@@ -64,6 +71,6 @@ export default class UrlSet {
       return this.localhostUrl;
     }
 
-    return new URL(this.#endpoint);
+    return forceHttps(new URL(this.#endpoint));
   }
 }
